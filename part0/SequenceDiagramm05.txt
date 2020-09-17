@@ -1,0 +1,20 @@
+browser->server: HTTP GET https://fullstack-exampleapp.herokuapp.com/spa
+server->browser: index.html
+browser->server: HTTP GET https://fullstack-exampleapp.herokuapp.com/main.css
+server->browser: main.css
+browser->server: HTTP GET https://fullstack-exampleapp.herokuapp.com/spa.js
+server->browser: spa.js
+note over browser:
+spa.js executes, resulting in a
+GET request fetching the file data.json.
+end note
+browser->server: HTTP GET https://fullstack-exampleapp.herokuapp.com/data.json
+server->browser: data.json
+note over browser:
+The browser puts all notes fetched from data.json into
+a local variable (notes).
+end note
+note over browser:
+spa.js renders all notes within the local variable (notes)
+with the redrawNotes() function.
+end note

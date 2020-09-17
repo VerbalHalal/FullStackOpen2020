@@ -1,0 +1,16 @@
+note over browser:
+Browser fills out form and submits it.
+end note
+note over browser:
+spa.js recognizes the submit-event, prevents
+a default handling of a form-submit (REDIRECT),
+adds the note to a local variable (notes),
+redraws all notes within the local variable and
+finally sends a POST request including a JSON
+payload to the server.
+end note
+browser->server: HTTP POST https://fullstack-exampleapp.herokuapp.com/new_note_spa
+note over server:
+Server adds the note to data.json
+end note
+server->browser: 201 CREATED
