@@ -2,13 +2,9 @@ const dummy = (blogs) => {
     return 1
 }
 
-const totalLikes = (blogs) => {
-    return blogs.reduce((sum,cur) => sum+cur.likes,0)
-}
+const totalLikes = (blogs) => blogs.reduce((sum,cur) => sum+cur.likes,0)
 
-const favoriteBlog = (blogs) => {
-    return blogs.reduce((fav, cur) => cur.likes > fav.likes ? cur : fav)
-}
+const favoriteBlog = (blogs) => blogs.reduce((fav, cur) => cur.likes > fav.likes ? cur : fav)
 
 const mostBlogs = (blogs) => {
     let temp = {}
