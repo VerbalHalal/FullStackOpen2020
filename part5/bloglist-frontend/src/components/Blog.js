@@ -1,51 +1,61 @@
-import React, { useState } from 'react'
+import React, {useState} from 'react'
+import { useParams } from 'react-router-dom'
+import { useSelector, useDispatch } from 'react-redux'
+import { likeBlog, removeBlog, commentBlog } from '../reducer/blogReducer'
 
-const Blog = ({ blog, handleLike, handleDelete }) => {
-  const blogStyle = {
-    paddingTop: 10,
-    paddingLeft: 2,
-    border: 'solid',
-    borderWidth: 1,
-    marginBottom: 5
-  }
+const Blog = () => {
+    const id = useParams().id
+    const blogs = useSelector(state => state.blog)
+    const blog = blogs.find(blog => blog.id === id)
+    const dispatch = useDispatch()
+    const [comment, setComment] = useState('')
 
-  const [visible, setVisible] = useState(false)
-
-  const hideWhenVisible = { display: visible ? 'none' : '' }
-  const showWhenVisible = { display: visible ? '' : 'none' }
-
-  const toggleVisibility = () => {
-    setVisible(!visible)
-  }
-
-  const handleLikeButton = () => {
-    handleLike(blog)
-  }
-
-  const handleDeleteButton = () => {
-    if(window.confirm(`Delete ${blog.title} by ${blog.author} ?`)) {
-      handleDelete(blog)
+    const handleLike = () => {
+        dispatch(likeBlog(blog.id))
     }
-  }
 
-  return(
-    <div className='blog'>
-      <div style={{ ...blogStyle, ...hideWhenVisible }} className='beforeButton'>
-        {blog.title} by {blog.author} <button onClick={toggleVisibility}>view</button>
-      </div>
-      <div style={{ ...blogStyle, ...showWhenVisible }} className='afterButton'>
-      Title: {blog.title} <button onClick={toggleVisibility}>hide</button> <br/>
-      Author: {blog.author} <br/>
-      URL: {blog.url} <br/>
-      Likes: {blog.likes} <button onClick={handleLikeButton}>like</button> <br/>
-      User: {blog.user ? blog.user.username : 'unknown user'} <br/>
-        {blog.user ? (blog.user.username === JSON.parse(window.localStorage.getItem('savedUser')).username ? <button onClick={handleDeleteButton}>delete</button> : null) : null}
+    const handleDelete = () => {
+        if(window.confirm(`Delete blog '${blog.title}'?`)) {
+            dispatch(removeBlog(blog.id))
+        }
+    }
 
-      </div>
-    </div>
+    const handleCommentCreation = (e) => {
+        e.preventDefault()
+        dispatch(commentBlog(blog.id, comment))
+        setComment('')
+    }
 
-
-  )
+    return(
+        <>
+        {
+            blog
+            ?
+            <>
+                <h2>{blog.title} {blog.author}</h2>
+                <p>
+                    <a href={blog.url}>{blog.url}</a> <br/>
+                    {blog.likes} likes <button onClick={handleLike}>like</button><br/>
+                    added by {blog.user ? blog.user.username || 'unknown user' : 'unknown user'}
+                    {blog.user ? (blog.user.username === JSON.parse(window.localStorage.getItem('savedUser')).username ? <button onClick={handleDelete}>delete</button> : null) : null}
+                </p>
+                <h3>comments</h3>
+                <form onSubmit={handleCommentCreation}>
+                    <input
+                        value={comment}
+                        onChange={({target}) => setComment(target.value)}
+                    />
+                    <button>add comment</button>
+                </form>
+                <ul>
+                    {blog.comments.map(comment => <li key={comment.id}>{comment.comment}</li>)}
+                </ul>
+            </>
+            :
+            <p>blog not found</p>
+        }
+        </>
+    )
 }
 
 export default Blog

@@ -1,154 +1,69 @@
-import React, { useState, useEffect, useRef } from 'react'
-import Blog from './components/Blog'
-import blogService from './services/blogs'
-import loginService from './services/login'
+import React, {useEffect, useRef } from 'react'
+import {BrowserRouter as Router, Switch, Route } from 'react-router-dom'
+import {useDispatch, useSelector} from 'react-redux'
+import {initializeBlogs, addBlog} from './reducer/blogReducer'
+import {initializeUser, userLogin} from './reducer/userReducer'
 import LoginForm from './components/LoginForm'
 import CreateBlogForm from './components/CreateBlogForm'
 import Notification from './components/Notification'
 import Togglable from './components/Togglable'
+import Users from './components/Users'
+import User from './components/User'
+import BlogList from './components/BlogList'
+import Blog from './components/Blog'
+import Navigation from './components/Navigation'
+
 
 const App = () => {
-  const [blogs, setBlogs] = useState([])
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [user, setUser] = useState(null)
-  const [message, setMessage] = useState(null)
-  const [messageState, setMessageState] = useState(null)
   const createBlogFormRef = useRef()
+  const user = useSelector(state => state.user)
+  const dispatch = useDispatch()
+
 
   useEffect(() => {
-    const fetchBlogs = async () => {
-      const response = await blogService.getAll()
-      console.log(response)
-      setBlogs(response)
-    }
-    fetchBlogs()
-  }, [])
+    dispatch(initializeUser())
+    dispatch(initializeBlogs())
+  }, [dispatch])
 
-  useEffect(() => {
-    const storageUser = window.localStorage.getItem('savedUser')
-    if(storageUser) {
-      setUser(JSON.parse(storageUser))
-      blogService.setToken(JSON.parse(storageUser).token)
-    }
-  }, [])
-
-  const handleLogin = async event => {
-    event.preventDefault()
-
-    try {
-      const user = await loginService.login({ username: username, password: password })
-      window.localStorage.setItem('savedUser', JSON.stringify(user))
-      blogService.setToken(user.token)
-      setUser(user)
-      setPassword('')
-      setUsername('')
-      setMessage('Successfully logged in')
-      setMessageState('s')
-      setTimeout(() => {
-        setMessage(null)
-        setMessageState(null)
-      }, 3000)
-    }
-    catch(exception) {
-      console.log(exception)
-      setMessage('Username or password invalid')
-      setMessageState('e')
-      setTimeout(() => {
-        setMessage(null)
-        setMessageState(null)
-      }, 3000)
-    }
+  const handleLogin = (credentials) => {
+    dispatch(userLogin(credentials))
   }
 
-  const createBlog = async (blogObject) => {
-    try {
-      await blogService.create(blogObject)
-      setBlogs(await blogService.getAll())
-      setMessage('Successfully created blog')
-      setMessageState('s')
-      setTimeout(() => {
-        setMessage(null)
-        setMessageState(null)
-      }, 3000)
-      createBlogFormRef.current.toggleVisibility()
-    }
-    catch(exception) {
-      console.log(exception)
-      setMessage('Error in creating blog')
-      setMessageState('e')
-      setTimeout(() => {
-        setMessage(null)
-        setMessageState(null)
-      }, 3000)
-    }
-  }
-
-  const handleLogout = () => {
-    window.localStorage.removeItem('savedUser')
-    setUser(null)
-    blogService.setToken(null)
-    setMessage('Successfully logged out')
-    setMessageState('s')
-    setTimeout(() => {
-      setMessage(null)
-      setMessageState(null)
-    }, 3000)
-  }
-
-  const handleLike = async (toLike) => {
-    try {
-      await blogService.like(toLike)
-      const copy = [...blogs]
-      copy.forEach((obj) => {
-        if(obj.id === toLike.id) {
-          obj.likes+=1
-        }
-      })
-      setBlogs(copy)
-    }
-    catch(exception) {
-      console.log(exception)
-    }
-
-  }
-
-  const handleDelete = async(toDelete) => {
-    try {
-      await blogService.destroy(toDelete.id)
-      const copy = [...blogs]
-      copy.splice(copy.findIndex((i) => i.id === toDelete.id),1)
-      setBlogs(copy)
-    }
-    catch(exception) {
-      console.log(exception)
-    }
+  const createBlog = (blogObject) => {
+    dispatch(addBlog(blogObject))
+    createBlogFormRef.current.toggleVisibility()
   }
 
   return (
-    <div>
-      <Notification message={message} messageState={messageState}/>
+    <div className="container">
       {
         user !== null
           ?
-          <>
-            <h2>blogs</h2>
-            <p>{`${user.name} logged in `}<button onClick={handleLogout}>log out</button></p>
-            <Togglable buttonLabel="new blog" ref={createBlogFormRef}>
-              <CreateBlogForm createBlog={createBlog}/>
-            </Togglable>
-            {blogs.sort((a,b) => b.likes - a.likes).map(blog =>
-              <Blog key={blog.id} blog={blog} handleLike={handleLike} handleDelete={handleDelete} />
-            )}
-          </>
+          <Router>
+            <Navigation/>
+            <h2>blog app</h2>
+            <Switch>
+              <Route path="/users" exact>
+                <Users/>
+              </Route>
+              <Route path="/users/:id">
+                <User/>
+              </Route>
+              <Route path="/blogs/:id">
+                <Blog/>
+              </Route>
+              <Route path="/">
+                <Togglable buttonLabel="new blog" ref={createBlogFormRef}>
+                  <CreateBlogForm createBlog={createBlog}/>
+                </Togglable>
+                <BlogList/>
+              </Route>
+            </Switch>
+          </Router>
           :
-          <>
-            <LoginForm username={username} setUsername={setUsername} password={password} setPassword={setPassword} handleLogin={handleLogin}/>
-
-          </>
+          <LoginForm handleLogin={handleLogin}/>
       }
-
-
+      <Notification/>
     </div>
   )
 }
